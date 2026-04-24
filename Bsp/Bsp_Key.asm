@@ -16,7 +16,8 @@ Key_Temp:   DS  1       ; 暂存按键特征
 Key_Scan:
         MOV     A, P3
         CPL     A           
-        ANL     A, #03CH    
+        ; P3.2(INT0) 已给红外使用，这里仅扫描 P3.3/P3.4/P3.5 三个按键
+        ANL     A, #038H    
         MOV     R0, A       ; R0 暂存当前有效的按键特征
 
         ; --- 状态机路由 ---
@@ -58,12 +59,8 @@ CHECK_K2:
         MOV     A, #2
         RET
 CHECK_K3:
-        CJNE    A, #00010000B, CHECK_K4
+        CJNE    A, #00010000B, KEY_RET_0
         MOV     A, #3
-        RET
-CHECK_K4:
-        CJNE    A, #00100000B, KEY_RET_0
-        MOV     A, #4
         RET
 
 STATE_2: ; --- 状态 2：等待松开 ---
