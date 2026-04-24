@@ -1,67 +1,89 @@
-NAME    PROTOCOL
+NAME    PROTOCOL_IR
 
-PUBLIC  Task_ParseSerial
+PUBLIC  Task_ParseIR
 
-EXTRN   DATA (UART_RxReady)
-EXTRN   DATA (UART_RxCmd)
-EXTRN   DATA (UART_RxLen)
-EXTRN   IDATA (UART_RxBuf)  ; 【新增】必须引入缓冲区的地址才能读真实数据！
+EXTRN   DATA (IR_CmdReady)
+EXTRN   DATA (IR_Cmd)
 
 NOTE_OFF_EVT    EQU 22
 
-PROTOCOL_CODE    SEGMENT CODE
-RSEG    PROTOCOL_CODE
+IR_CODE SEGMENT CODE
+RSEG    IR_CODE
 
-Task_ParseSerial:
-        PUSH    00H
+; Task_ParseIR
+; 输出: A = 统一事件(0=无, 1..21=发音, 22=静音)
+; 说明: 先适配常见 21 键 NEC 小遥控，后续只需改映射表即可。
+Task_ParseIR:
+        MOV     A, IR_CmdReady
+        JZ      Task_ParseIR_None
 
-        MOV     A, UART_RxReady
-        JZ      Task_ParseSerial_None
-
-        ; 收到完整数据帧，立刻清除标志位，让中断可以接收下一帧
         CLR     A
-        MOV     UART_RxReady, A
-        
-        ; --- 1. 检查指令类型 (Cmd == 0x02 才处理) ---
-        MOV     A, UART_RxCmd
-        CJNE    A, #02H, Task_ParseSerial_None
+        MOV     IR_CmdReady, A
 
-        ; --- 2. 检查是否有载荷数据 (Len > 0) ---
-        MOV     A, UART_RxLen
-        JZ      Task_ParseSerial_None
+        MOV     A, IR_Cmd
 
-        ; --- 3. 提取包裹里的真实数据：UART_RxBuf[0] ---
-        MOV     R0, #UART_RxBuf
-        MOV     A, @R0
-
-        ; --- 4. 业务逻辑转换 ---
-        JNZ     Task_ParseSerial_CheckRange ; 如果不是 0，去检查 1~21 的范围
-        
-        ; 如果上位机发来的是 0，代表松手静音，转换为 NOTE_OFF_EVT (22)
+        ; 常见 21-key NEC 遥控按键码:
+        ; 0 -> 16H, 1 -> 0CH, 2 -> 18H, 3 -> 5EH
+        ; 4 -> 08H, 5 -> 1CH, 6 -> 5AH, 7 -> 42H, 8 -> 52H, 9 -> 4AH
+        ; VOL- -> 07H (作为静音)
+        CJNE    A, #016H, Task_ParseIR_CheckMute2
         MOV     A, #NOTE_OFF_EVT
-        SJMP    Task_ParseSerial_Exit
+        SJMP    Task_ParseIR_Exit
 
-Task_ParseSerial_CheckRange:
-        ; 检查是否小于 1
-        CLR     C
-        SUBB    A, #01H
-        JC      Task_ParseSerial_None
+Task_ParseIR_CheckMute2:
+        CJNE    A, #007H, Task_ParseIR_Check1
+        MOV     A, #NOTE_OFF_EVT
+        SJMP    Task_ParseIR_Exit
 
-        MOV     A, @R0      ; 恢复刚刚取出的音符值
-        
-        ; 检查是否大于 21
-        CLR     C
-        SUBB    A, #22      ; 如果 A >= 22，进位标志 C 会被清零
-        JNC     Task_ParseSerial_None
+Task_ParseIR_Check1:
+        CJNE    A, #00CH, Task_ParseIR_Check2
+        MOV     A, #1
+        SJMP    Task_ParseIR_Exit
 
-        MOV     A, @R0      ; 完美合法！A = 真实音符 (1~21)
-        SJMP    Task_ParseSerial_Exit
+Task_ParseIR_Check2:
+        CJNE    A, #018H, Task_ParseIR_Check3
+        MOV     A, #2
+        SJMP    Task_ParseIR_Exit
 
-Task_ParseSerial_None:
+Task_ParseIR_Check3:
+        CJNE    A, #05EH, Task_ParseIR_Check4
+        MOV     A, #3
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check4:
+        CJNE    A, #008H, Task_ParseIR_Check5
+        MOV     A, #8
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check5:
+        CJNE    A, #01CH, Task_ParseIR_Check6
+        MOV     A, #9
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check6:
+        CJNE    A, #05AH, Task_ParseIR_Check7
+        MOV     A, #10
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check7:
+        CJNE    A, #042H, Task_ParseIR_Check8
+        MOV     A, #15
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check8:
+        CJNE    A, #052H, Task_ParseIR_Check9
+        MOV     A, #16
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_Check9:
+        CJNE    A, #04AH, Task_ParseIR_None
+        MOV     A, #17
+        SJMP    Task_ParseIR_Exit
+
+Task_ParseIR_None:
         CLR     A
 
-Task_ParseSerial_Exit:
-        POP     00H
+Task_ParseIR_Exit:
         RET
 
 END
