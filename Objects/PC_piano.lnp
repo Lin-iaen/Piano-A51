@@ -1,0 +1,14 @@
+".\Objects\Main.obj",
+".\Objects\MusicPlayer.obj",
+".\Objects\Protocol.obj",
+".\Objects\Drv_Gpio.obj",
+".\Objects\Drv_Timer.obj",
+".\Objects\Drv_Uart.obj",
+".\Objects\Bsp_Buzzer.obj",
+".\Objects\Bsp_Key.obj",
+".\Objects\Bsp_Led.obj",
+".\Objects\Bsp_Lcd.obj",
+".\Objects\Delay.obj",
+".\Objects\Math.obj" 
+TO ".\Objects\PC_piano" 
+PRINT(".\Listings\PC_piano.m51") RAMSIZE(256) 

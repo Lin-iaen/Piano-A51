@@ -1,0 +1,200 @@
+A51 MACRO ASSEMBLER  DRV_UART                                                             04/22/2026 17:39:13 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Drv_Uart.obj
+ASSEMBLER INVOKED BY: E:\Tools\keil\Keil_v5\C51\BIN\A51.EXE Drv\Drv_Uart.asm SET(SMALL) DEBUG PRINT(.\Listings\Drv_Uart.
+                      lst) OBJECT(.\Objects\Drv_Uart.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     NAME    DRV_UART
+                       2     
+                       3     PUBLIC  UART_Init
+                       4     PUBLIC  UART_ISR
+                       5     PUBLIC  UART_ReadByte
+                       6     
+  0040                 7     UART_FIFO_SIZE  EQU 64
+                       8     ; 类似 #define UART_FIFO_SIZE 64
+  003F                 9     UART_FIFO_MASK  EQU 3FH ; 0011 1111B = 63
+                      10     
+                      11     UART_DATA   SEGMENT DATA
+----                  12     RSEG    UART_DATA
+                      13     ; 定义四个变量,每个变量占用一个字节
+0000                  14     UART_Head:  DS  1 ; FIFO头指针
+0001                  15     UART_Tail:  DS  1 ; FIFO尾指针
+0002                  16     UART_Count: DS  1 ; FIFO中数据的数量
+0003                  17     UART_RxTmp: DS  1 ; 临时变量，用于存储接收到的数据
+                      18     
+                      19     
+                      20     
+                      21     
+                      22     UART_IDATA  SEGMENT IDATA ; 避开寄存器区, 使用IDATA区存储UART_Fifo数组,位置�
+                             ��80H以上
+----                  23     RSEG    UART_IDATA
+0000                  24     UART_Fifo:  DS  UART_FIFO_SIZE
+                      25     
+                      26     UART_CODE   SEGMENT CODE
+----                  27     RSEG    UART_CODE
+                      28     
+                      29     ; UART_Init
+                      30     ; 11.0592MHz crystal, Timer1 mode2 auto-reload, 9600 baud.
+0000                  31     UART_Init:
+0000 C0E0             32             PUSH    ACC
+                      33     
+0002 53890F           34             ANL     TMOD, #0FH ; 使用ANL清除高4位，保留低4位
+0005 438920           35             ORL     TMOD, #20H ; 0010 0000B, 定时器1工作在模式2（8位自动重载模�
+                             �）
+                      36     
+0008 53877F           37             ANL     PCON, #07FH ; SMOD位清0，波特率不加倍
+000B 758DFD           38             MOV     TH1, #0FDH ; 重装载值
+000E 758BFD           39             MOV     TL1, #0FDH ; 预装载值
+                      40     
+0011 759850           41             MOV     SCON, #50H
+                      42     
+0014 C299             43             CLR     TI
+0016 C298             44             CLR     RI
+0018 D28E             45             SETB    TR1
+001A D2AC             46             SETB    ES
+001C D2AF             47             SETB    EA
+                      48     
+001E 750000   F       49             MOV     UART_Head, #00H
+0021 750000   F       50             MOV     UART_Tail, #00H
+0024 750000   F       51             MOV     UART_Count, #00H
+                      52     
+0027 D0E0             53             POP     ACC
+0029 22               54             RET
+                      55     
+A51 MACRO ASSEMBLER  DRV_UART                                                             04/22/2026 17:39:13 PAGE     2
+
+                      56     ; UART_ISR
+                      57     ; Serial interrupt body, called from vector in Main.asm.
+002A                  58     UART_ISR:
+002A C0E0             59             PUSH    ACC
+002C C000             60             PUSH    00H
+002E C001             61             PUSH    01H
+0030 C0D0             62             PUSH    0D0H
+                      63     
+0032 30981F           64             JNB     RI, UART_ISR_CheckTI
+0035 C298             65             CLR     RI
+                      66             
+                      67             ; CPL     P1.7
+                      68             
+0037 E599             69             MOV     A, SBUF
+0039 F500     F       70             MOV     UART_RxTmp, A
+                      71     
+003B E500     F       72             MOV     A, UART_Count
+003D B44002           73             CJNE    A, #UART_FIFO_SIZE, UART_ISR_Store
+0040 8012             74             SJMP    UART_ISR_CheckTI
+                      75     
+0042                  76     UART_ISR_Store:
+0042 E500     F       77             MOV     A, UART_Head
+0044 2400     F       78             ADD     A, #UART_Fifo
+0046 F8               79             MOV     R0, A
+0047 E500     F       80             MOV     A, UART_RxTmp
+0049 F6               81             MOV     @R0, A
+                      82     
+004A 0500     F       83             INC     UART_Head
+004C E500     F       84             MOV     A, UART_Head
+004E 543F             85             ANL     A, #UART_FIFO_MASK
+0050 F500     F       86             MOV     UART_Head, A
+                      87     
+0052 0500     F       88             INC     UART_Count
+                      89     
+0054                  90     UART_ISR_CheckTI:
+0054 309902           91             JNB     TI, UART_ISR_Exit
+0057 C299             92             CLR     TI
+                      93     
+0059                  94     UART_ISR_Exit:
+0059 D0D0             95             POP     0D0H
+005B D001             96             POP     01H
+005D D000             97             POP     00H
+005F D0E0             98             POP     ACC
+0061 32               99             RETI
+                     100     
+                     101     ; UART_ReadByte
+                     102     ; Return ACC=data, C=1 on success; ACC=00H, C=0 if FIFO empty.
+0062                 103     UART_ReadByte:
+0062 C000            104             PUSH    00H
+0064 C001            105             PUSH    01H
+                     106     
+0066 C2AC            107             CLR     ES
+0068 E500     F      108             MOV     A, UART_Count
+006A 6017            109             JZ      UART_Read_Empty
+                     110     
+006C E500     F      111             MOV     A, UART_Tail
+006E 2400     F      112             ADD     A, #UART_Fifo
+0070 F8              113             MOV     R0, A
+0071 E6              114             MOV     A, @R0
+0072 F9              115             MOV     R1, A       ; R1 暂存读到的正确数据
+                     116     
+0073 0500     F      117             INC     UART_Tail
+0075 E500     F      118             MOV     A, UART_Tail
+0077 543F            119             ANL     A, #UART_FIFO_MASK
+0079 F500     F      120             MOV     UART_Tail, A
+                     121     
+A51 MACRO ASSEMBLER  DRV_UART                                                             04/22/2026 17:39:13 PAGE     3
+
+007B 1500     F      122             DEC     UART_Count
+007D D2AC            123             SETB    ES
+                     124     
+007F E9              125             MOV     A, R1       ; 把正确数据放回 A
+0080 D3              126             SETB    C           ; 进位标志置 1，表示有数据
+0081 8004            127             SJMP    UART_Read_Return
+                     128     
+0083                 129     UART_Read_Empty:
+0083 D2AC            130             SETB    ES
+0085 E4              131             CLR     A
+0086 C3              132             CLR     C
+                     133     
+0087                 134     UART_Read_Return:
+0087 D001            135             POP     01H
+0089 D000            136             POP     00H
+008B 22              137             RET
+                     138     
+                     139     END
+A51 MACRO ASSEMBLER  DRV_UART                                                             04/22/2026 17:39:13 PAGE     4
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+DRV_UART . . . . .  N NUMB   -----       
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ES . . . . . . . .  B ADDR   00A8H.4 A   
+PCON . . . . . . .  D ADDR   0087H   A   
+RI . . . . . . . .  B ADDR   0098H.0 A   
+SBUF . . . . . . .  D ADDR   0099H   A   
+SCON . . . . . . .  D ADDR   0098H   A   
+TH1. . . . . . . .  D ADDR   008DH   A   
+TI . . . . . . . .  B ADDR   0098H.1 A   
+TL1. . . . . . . .  D ADDR   008BH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR1. . . . . . . .  B ADDR   0088H.6 A   
+UART_CODE. . . . .  C SEG    008CH       REL=UNIT
+UART_COUNT . . . .  D ADDR   0002H   R   SEG=UART_DATA
+UART_DATA. . . . .  D SEG    0004H       REL=UNIT
+UART_FIFO. . . . .  I ADDR   0000H   R   SEG=UART_IDATA
+UART_FIFO_MASK . .  N NUMB   003FH   A   
+UART_FIFO_SIZE . .  N NUMB   0040H   A   
+UART_HEAD. . . . .  D ADDR   0000H   R   SEG=UART_DATA
+UART_IDATA . . . .  I SEG    0040H       REL=UNIT
+UART_INIT. . . . .  C ADDR   0000H   R   SEG=UART_CODE
+UART_ISR . . . . .  C ADDR   002AH   R   SEG=UART_CODE
+UART_ISR_CHECKTI .  C ADDR   0054H   R   SEG=UART_CODE
+UART_ISR_EXIT. . .  C ADDR   0059H   R   SEG=UART_CODE
+UART_ISR_STORE . .  C ADDR   0042H   R   SEG=UART_CODE
+UART_READBYTE. . .  C ADDR   0062H   R   SEG=UART_CODE
+UART_READ_EMPTY. .  C ADDR   0083H   R   SEG=UART_CODE
+UART_READ_RETURN .  C ADDR   0087H   R   SEG=UART_CODE
+UART_RXTMP . . . .  D ADDR   0003H   R   SEG=UART_DATA
+UART_TAIL. . . . .  D ADDR   0001H   R   SEG=UART_DATA
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

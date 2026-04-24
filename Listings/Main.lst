@@ -1,0 +1,147 @@
+A51 MACRO ASSEMBLER  MAIN                                                                 04/22/2026 17:39:13 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Main.obj
+ASSEMBLER INVOKED BY: E:\Tools\keil\Keil_v5\C51\BIN\A51.EXE App\Main.asm SET(SMALL) DEBUG PRINT(.\Listings\Main.lst) OBJ
+                      ECT(.\Objects\Main.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     NAME    MAIN
+                       2     
+                       3     EXTRN   CODE (Timer0_Init)
+                       4     EXTRN   CODE (UART_Init)
+                       5     EXTRN   CODE (Timer0_ISR)
+                       6     EXTRN   CODE (UART_ISR)
+                       7     EXTRN   CODE (Task_ParseSerial)
+                       8             
+                       9     EXTRN   CODE (Key_Scan)
+                      10     EXTRN   CODE (Buzzer_Play)
+                      11     EXTRN   CODE (Led_ShowSpectrum)
+                      12             
+                      13     EXTRN   CODE (Lcd_Init)
+                      14     EXTRN   CODE (Lcd_WriteCmd)
+                      15     EXTRN   CODE (Lcd_WriteData)
+                      16     EXTRN   CODE (Lcd_LoadCustomChars)
+                      17     
+----                  18     CSEG
+                      19     
+0000                  20     ORG     0000H
+0000 020030           21             LJMP    MAIN_START
+                      22     
+000B                  23     ORG     000BH
+000B 020000   F       24             LJMP    Timer0_ISR
+                      25     
+0023                  26     ORG     0023H
+0023 020000   F       27             LJMP    UART_ISR
+                      28     
+0030                  29     ORG     0030H
+0030                  30     MAIN_START:
+0030 758150           31             MOV     SP, #50H
+                      32     
+0033 120000   F       33             LCALL   Timer0_Init
+0036 120000   F       34             LCALL   UART_Init
+                      35     
+0039 120000   F       36             LCALL   Lcd_Init
+                      37             
+                      38             ; 【新增】：把阴阳码加载到屏幕的显存里！
+003C 120000   F       39             LCALL   Lcd_LoadCustomChars 
+                      40             
+                      41             ; --- 设置光标到第一行开头 ---
+003F 7480             42             MOV     A, #80H
+0041 120000   F       43             LCALL   Lcd_WriteCmd
+                      44             
+                      45             ; 【见证奇迹】：召唤第 0 个自定义字符 (也就是我们的阴阳码 
+                             1)
+                      46             ; 注意这里不能写 #'1'，必须写 #00H！
+0044 7400             47             MOV     A, #00H     
+0046 120000   F       48             LCALL   Lcd_WriteData
+                      49     
+0049 D2AF             50             SETB    EA              ; 开启总中断
+                      51             
+                      52             ; CLR     P1.0
+                      53     
+004B                  54     MAIN_LOOP:
+004B 120000   F       55             LCALL   Task_ParseSerial
+                      56             
+A51 MACRO ASSEMBLER  MAIN                                                                 04/22/2026 17:39:13 PAGE     2
+
+                      57             ; 2. 巡视板子上的 S1 按键有没有被按下
+004E 120000   F       58             LCALL   Key_Scan
+0051 6033             59             JZ      MAIN_LOOP_END   ; 如果 ACC 是 0 (没按下)，跳过静音逻辑
+                      60     
+                      61             ; 先处理“松手事件”(Key_Scan 返回 5)，避免被后续分支误改写
+0053 B40509           62             CJNE    A, #5, CHECK_KEY_PRESS
+0056 E4               63             CLR     A
+0057 120000   F       64             LCALL   Buzzer_Play
+005A 120000   F       65             LCALL   Led_ShowSpectrum
+005D 8027             66             SJMP    MAIN_LOOP_END
+                      67     
+005F                  68     CHECK_KEY_PRESS:
+                      69             
+                      70             ; 3. 如果 ACC 是 1 (按下了S1)，执行强制静音！
+005F B40106           71             CJNE    A, #1, CHECK_KEY2
+0062 E4               72             CLR     A               ; 准备静音指令 (索引 0)
+0063 120000   F       73             LCALL   Buzzer_Play     ; 强制蜂鸣器闭嘴
+0066 801E             74             SJMP    MAIN_LOOP_END
+0068                  75     CHECK_KEY2:
+0068 B40207           76             CJNE    A, #2, CHECK_KEY3
+006B 7401             77             MOV A, #1
+006D 120000   F       78             LCALL   Buzzer_Play     ; 
+                      79             ; 这里可以添加按下 S2 的特殊功能，例如切换显示模式
+0070 8014             80             SJMP    MAIN_LOOP_END
+0072                  81     CHECK_KEY3:
+0072 B40307           82             CJNE    A, #3, CHECK_KEY4
+                      83             ; 【如果按了 S3】：播放中音 Do (传递数字 8)
+0075 7408             84             MOV     A, #8
+0077 120000   F       85             LCALL   Buzzer_Play
+007A 800A             86             SJMP    MAIN_LOOP_END
+                      87     
+007C                  88     CHECK_KEY4:
+007C B40407           89             CJNE    A, #4, MAIN_LOOP_END
+                      90             ; 【如果按了 S4】：播放高音 Do (传递数字 15)
+007F 740F             91             MOV     A, #15
+0081 120000   F       92             LCALL   Buzzer_Play
+0084 8000             93             SJMP    MAIN_LOOP_END
+                      94     
+0086                  95     MAIN_LOOP_END:
+0086 80C3             96             SJMP    MAIN_LOOP
+                      97     
+                      98     END
+A51 MACRO ASSEMBLER  MAIN                                                                 04/22/2026 17:39:13 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E              T Y P E  V A L U E   ATTRIBUTES
+
+BUZZER_PLAY . . . .  C ADDR   -----       EXT
+CHECK_KEY2. . . . .  C ADDR   0068H   A   
+CHECK_KEY3. . . . .  C ADDR   0072H   A   
+CHECK_KEY4. . . . .  C ADDR   007CH   A   
+CHECK_KEY_PRESS . .  C ADDR   005FH   A   
+EA. . . . . . . . .  B ADDR   00A8H.7 A   
+KEY_SCAN. . . . . .  C ADDR   -----       EXT
+LCD_INIT. . . . . .  C ADDR   -----       EXT
+LCD_LOADCUSTOMCHARS  C ADDR   -----       EXT
+LCD_WRITECMD. . . .  C ADDR   -----       EXT
+LCD_WRITEDATA . . .  C ADDR   -----       EXT
+LED_SHOWSPECTRUM. .  C ADDR   -----       EXT
+MAIN. . . . . . . .  N NUMB   -----       
+MAIN_LOOP . . . . .  C ADDR   004BH   A   
+MAIN_LOOP_END . . .  C ADDR   0086H   A   
+MAIN_START. . . . .  C ADDR   0030H   A   
+SP. . . . . . . . .  D ADDR   0081H   A   
+TASK_PARSESERIAL. .  C ADDR   -----       EXT
+TIMER0_INIT . . . .  C ADDR   -----       EXT
+TIMER0_ISR. . . . .  C ADDR   -----       EXT
+UART_INIT . . . . .  C ADDR   -----       EXT
+UART_ISR. . . . . .  C ADDR   -----       EXT
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

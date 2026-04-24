@@ -1,0 +1,25 @@
+A51 MACRO ASSEMBLER  DRV_GPIO                                                             04/22/2026 17:39:13 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Drv_Gpio.obj
+ASSEMBLER INVOKED BY: E:\Tools\keil\Keil_v5\C51\BIN\A51.EXE Drv\Drv_Gpio.asm SET(SMALL) DEBUG PRINT(.\Listings\Drv_Gpio.
+                      lst) OBJECT(.\Objects\Drv_Gpio.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     END
+A51 MACRO ASSEMBLER  DRV_GPIO                                                             04/22/2026 17:39:13 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
