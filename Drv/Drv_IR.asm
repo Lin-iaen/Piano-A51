@@ -99,17 +99,26 @@ IR_ISR_CheckStart:
         MOV     A, IR_DeltaH
         CLR     C
         SUBB    A, #02CH
-        JC      IR_ISR_ResetIdle
+        JNC     IR_ISR_CheckStart_Upper  ; >= 2CH，不借位，跳去检查上限
+        LJMP    IR_ISR_ResetIdle         ; < 2CH，错的，长跳转复位
 
+IR_ISR_CheckStart_Upper:
         MOV     A, IR_DeltaH
         CLR     C
         SUBB    A, #037H
-        JC      IR_ISR_StartFrame
-        LJMP    IR_ISR_ResetIdle
+        JC      IR_ISR_StartFrame_Go     ; < 37H，借位了，说明在合法区间内！
+        LJMP    IR_ISR_ResetIdle         ; >= 37H，错的，长跳转复位
+
+IR_ISR_StartFrame_Go:                    ; 【新增中转标签】
+        LJMP    IR_ISR_StartFrame        ; 安全地长跳转去启动帧处理
+
 
 IR_ISR_RepeatFrame:
         MOV     A, IR_LastCmd
-        JZ      IR_ISR_ResetIdle
+        JNZ     IR_ISR_RepeatFrame_Go    ; 【逻辑反转】：如果不为0，说明有上一条命令，跳去执行！
+        LJMP    IR_ISR_ResetIdle         ; 如果为0，长跳转复位
+
+IR_ISR_RepeatFrame_Go:                   ; 【新增中转标签】
         MOV     IR_Cmd, A
         MOV     IR_CmdReady, #1
         LJMP    IR_ISR_ResetIdle

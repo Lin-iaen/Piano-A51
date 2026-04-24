@@ -1,3 +1,35 @@
+# 编译生成的文件
+*.obj
+*.lst
+*.map
+*.hex
+*.bin
+*.axf
+*.crf
+*.d
+*.o
+*.bak
+
+# Keil 项目文件（个人配置，无需上传）
+*.uvgui.*      # 就是你警告里出现的那个文件
+*.uvopt
+*.uvoptx
+*.scvd
+*.uvguix.*
+*.uvproj.*     # 如果有 .uvproj.user 这类文件
+
+# 临时文件
+*.log
+*.tmp
+*~
+
+# VS Code 工作区配置（可选）
 .vscode/
+!.vscode/settings.json   # 如果有一些通用设置可以保留
+.vscode/keil-assistant.log  # 你看到的这个日志文件也建议忽略
+
+# 输出目录
+Debug/
+Release/
 Listings/
 Objects/
