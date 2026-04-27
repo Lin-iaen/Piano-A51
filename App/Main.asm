@@ -12,11 +12,7 @@ EXTRN   CODE (Task_ParseIR)
 EXTRN   CODE (Key_Scan)
 EXTRN   CODE (Buzzer_Play)
 EXTRN   CODE (Led_ShowSpectrum)
-	
-EXTRN   CODE (Lcd_Init)
-EXTRN   CODE (Lcd_WriteCmd)
-EXTRN   CODE (Lcd_WriteData)
-EXTRN   CODE (Lcd_LoadCustomChars)
+EXTRN   CODE (MusicPlayer_PlaySong)
 
 CSEG
 
@@ -41,20 +37,6 @@ MAIN_START:
 	LCALL   Timer0_Init
 	LCALL   UART_Init
 	LCALL   IR_Init
-
-	LCALL   Lcd_Init
-        
-        ; 【新增】：把阴阳码加载到屏幕的显存里！
-        LCALL   Lcd_LoadCustomChars 
-        
-        ; --- 设置光标到第一行开头 ---
-        MOV     A, #80H
-        LCALL   Lcd_WriteCmd
-        
-        ; 【见证奇迹】：召唤第 0 个自定义字符 (也就是我们的阴阳码 1)
-        ; 注意这里不能写 #'1'，必须写 #00H！
-        MOV     A, #00H     
-        LCALL   Lcd_WriteData
 
         SETB    EA              ; 开启总中断
 	
@@ -111,21 +93,32 @@ Key_ToEvent_None:
 
 ; --------------------------------------------------------
 ; Dispatch_Event
-; 输入: A = 统一事件(0=无, 1..21=发音, 22=静音)
+; 输入: A = 统一事件(0=无, 1..21=发音, 22=静音, 30~39=歌曲)
 ; --------------------------------------------------------
 Dispatch_Event:
 	PUSH    07H
 
 	JZ      Dispatch_Event_Exit
 
-	CJNE    A, #NOTE_OFF_EVT, Dispatch_Event_Play
+	CJNE    A, #NOTE_OFF_EVT, Dispatch_Event_CheckSong
 	CLR     A
 	LCALL   Buzzer_Play
 	LCALL   Led_ShowSpectrum
 	SJMP    Dispatch_Event_Exit
 
-Dispatch_Event_Play:
+Dispatch_Event_CheckSong:
 	MOV     R7, A
+	CLR     C
+	SUBB    A, #30
+	JC      Dispatch_Event_Play ; 如果 A < 30 (即 1~21, 23~29), 跳去普通音符处理
+	
+	; 当 A >= 30, 代表它是歌曲
+	; A 此时已经是 A - 30 的结果 (即歌曲 ID)
+	LCALL   MusicPlayer_PlaySong
+	SJMP    Dispatch_Event_Exit
+
+Dispatch_Event_Play:
+	MOV     A, R7
 	CLR     C
 	SUBB    A, #NOTE_OFF_EVT
 	JNC     Dispatch_Event_Exit

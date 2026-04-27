@@ -119,8 +119,12 @@ IR_ISR_RepeatFrame:
         LJMP    IR_ISR_ResetIdle         ; 如果为0，长跳转复位
 
 IR_ISR_RepeatFrame_Go:                   ; 【新增中转标签】
+        ; 屏蔽连发事件，防止歌曲或单音发生持续“口吃”重播
         MOV     IR_Cmd, A
-        MOV     IR_CmdReady, #1
+        ; MOV     IR_CmdReady, #1 ; 被屏蔽
+        NOP
+        NOP
+        NOP
         LJMP    IR_ISR_ResetIdle
 
 IR_ISR_StartFrame:

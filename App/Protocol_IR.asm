@@ -26,8 +26,9 @@ Task_ParseIR:
         ; 0 -> 16H, 1 -> 0CH, 2 -> 18H, 3 -> 5EH
         ; 4 -> 08H, 5 -> 1CH, 6 -> 5AH, 7 -> 42H, 8 -> 52H, 9 -> 4AH
         ; VOL- -> 07H (作为静音)
+        ; 我们将按键 0~9 映射到 统一事件的 30~39 (供 MusicPlayer 播放特定歌曲或延时音符)
         CJNE    A, #016H, Task_ParseIR_CheckMute2
-        MOV     A, #NOTE_OFF_EVT
+        MOV     A, #30
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_CheckMute2:
@@ -37,47 +38,47 @@ Task_ParseIR_CheckMute2:
 
 Task_ParseIR_Check1:
         CJNE    A, #00CH, Task_ParseIR_Check2
-        MOV     A, #1
+        MOV     A, #31
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check2:
         CJNE    A, #018H, Task_ParseIR_Check3
-        MOV     A, #2
+        MOV     A, #32
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check3:
         CJNE    A, #05EH, Task_ParseIR_Check4
-        MOV     A, #3
+        MOV     A, #33
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check4:
         CJNE    A, #008H, Task_ParseIR_Check5
-        MOV     A, #8
+        MOV     A, #34
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check5:
         CJNE    A, #01CH, Task_ParseIR_Check6
-        MOV     A, #9
+        MOV     A, #35
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check6:
         CJNE    A, #05AH, Task_ParseIR_Check7
-        MOV     A, #10
+        MOV     A, #36
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check7:
         CJNE    A, #042H, Task_ParseIR_Check8
-        MOV     A, #15
+        MOV     A, #37
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check8:
         CJNE    A, #052H, Task_ParseIR_Check9
-        MOV     A, #16
+        MOV     A, #38
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_Check9:
         CJNE    A, #04AH, Task_ParseIR_None
-        MOV     A, #17
+        MOV     A, #39
         SJMP    Task_ParseIR_Exit
 
 Task_ParseIR_None:

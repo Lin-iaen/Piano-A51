@@ -444,11 +444,6 @@
               <FileType>2</FileType>
               <FilePath>.\Bsp\Bsp_Led.asm</FilePath>
             </File>
-            <File>
-              <FileName>Bsp_Lcd.asm</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\Bsp\Bsp_Lcd.asm</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
