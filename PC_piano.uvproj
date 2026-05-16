@@ -125,7 +125,7 @@
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
           <Simulator>
-            <UseSimulator>1</UseSimulator>
+            <UseSimulator>0</UseSimulator>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -137,7 +137,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Simulator>
           <Target>
-            <UseTarget>0</UseTarget>
+            <UseTarget>1</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>0</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -149,7 +149,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>-1</TargetSelection>
+          <TargetSelection>0</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -163,7 +163,7 @@
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
             <InitializationFile></InitializationFile>
-            <Driver></Driver>
+            <Driver>BIN\MON51.DLL</Driver>
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -424,6 +424,11 @@
               <FileType>2</FileType>
               <FilePath>.\Drv\Drv_IR.asm</FilePath>
             </File>
+            <File>
+              <FileName>Drv_DigiTube.asm</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\Drv\Drv_DigiTube.asm</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -443,6 +448,11 @@
               <FileName>Bsp_Led.asm</FileName>
               <FileType>2</FileType>
               <FilePath>.\Bsp\Bsp_Led.asm</FilePath>
+            </File>
+            <File>
+              <FileName>Bsp_DigiTube.asm</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\Bsp\Bsp_DigiTube.asm</FilePath>
             </File>
           </Files>
         </Group>
